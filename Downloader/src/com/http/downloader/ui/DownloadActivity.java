@@ -1,5 +1,6 @@
 package com.http.downloader.ui;
 
+import com.http.downloader.ApkManager;
 import com.http.downloader.DownloadTask;
 import com.http.downloader.Downloader;
 import com.http.downloader.DownloadTask.DownloadCallback;
@@ -53,6 +54,7 @@ public class DownloadActivity extends Activity {
 			@Override
 			public void onDownloadResult(int taskId, String filePath, String errorMsg) {
 				setImg(filePath);
+				ApkManager.installApk(DownloadActivity.this, filePath, false, 1);
 			}
 		});
 		downloader.start(url);

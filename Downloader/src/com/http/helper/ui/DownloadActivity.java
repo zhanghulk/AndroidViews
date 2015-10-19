@@ -1,9 +1,9 @@
 package com.http.helper.ui;
 
+import com.http.helper.DownloadTask;
+import com.http.helper.DownloadTask.DownloadCallback;
 import com.http.helper.Downloader;
-import com.http.helper.Downloader.DownloadCallback;
 import com.http.helper.Downloader.DownloadResultCallback;
-import com.http.helper.Downloader.DownloadTask;
 import com.progress.downloader.R;
 
 import android.app.Activity;

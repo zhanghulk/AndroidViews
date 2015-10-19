@@ -35,10 +35,13 @@ public class ApkManager {
      * @param act
      * @param path
      */
-    public static void installApk(Activity activity, String apkPath, boolean addTaskFlag, int requestCode) {
-        if(!isApkFile(apkPath)) return;
+    public static boolean installApk(Activity activity, String apkPath, boolean addTaskFlag, int requestCode) {
+        if(!isApkFile(apkPath)){
+            return false;
+        }
         Intent intent = ApkManager.getInstallIntent(apkPath, addTaskFlag);
         activity.startActivityForResult(intent, requestCode);
+        return true;
     }
 
     public static boolean isApkFile(String apkPath) {

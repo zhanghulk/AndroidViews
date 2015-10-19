@@ -1,17 +1,11 @@
 package com.http.downloader;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Environment;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -153,7 +147,14 @@ public class Downloader implements DownloadCallback, OnClickListener {
 			downloadTask.setCanceled(true);
 		}
 		dismissDialog();
+		cancelNotification();
 	}
+
+	public void cancelNotification() {
+        if (mNotifyManager != null) {
+            mNotifyManager.cancel();
+        }
+    }
 
 	public void showDialog() {
 		DialogManager.showViewDialog(mContext, dialog, view, gravity, null,

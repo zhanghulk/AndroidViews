@@ -1,4 +1,4 @@
-package com.http.helper;
+package com.http.downloader;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -23,7 +23,7 @@ import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.http.helper.DownloadTask.DownloadCallback;
+import com.http.downloader.DownloadTask.DownloadCallback;
 import com.progress.downloader.R;
 
 public class Downloader implements DownloadCallback, OnClickListener {

@@ -17,7 +17,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.http.helper.ui.DownloadActivity"
+            android:name="com.http.downloader.ui.DownloadActivity"
             android:label="@string/app_name"
             android:icon="@drawable/ic_launcher" >
             <intent-filter>

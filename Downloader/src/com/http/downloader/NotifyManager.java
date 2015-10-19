@@ -1,4 +1,4 @@
-package com.http.helper;
+package com.http.downloader;
 
 import com.progress.downloader.R;
 

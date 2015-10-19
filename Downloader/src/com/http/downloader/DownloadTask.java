@@ -1,4 +1,4 @@
-package com.http.helper;
+package com.http.downloader;
 
 import java.io.File;
 import java.io.FileOutputStream;

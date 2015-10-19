@@ -1,4 +1,4 @@
-package com.http.helper;
+package com.http.downloader;
 
 import android.app.Activity;
 import android.app.Dialog;

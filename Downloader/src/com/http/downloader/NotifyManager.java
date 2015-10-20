@@ -1,7 +1,5 @@
 package com.http.downloader;
 
-import com.progress.downloader.R;
-
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;

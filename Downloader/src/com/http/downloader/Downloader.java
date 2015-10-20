@@ -1,11 +1,8 @@
 package com.http.downloader;
 
-import java.io.File;
-
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -18,7 +15,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.http.downloader.DownloadTask.DownloadCallback;
-import com.progress.downloader.R;
 
 public class Downloader implements DownloadCallback, OnClickListener {
 	public interface DownloadResultCallback {

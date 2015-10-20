@@ -1,16 +1,16 @@
 <resources>
 
-    <style name="DataSheetAnimation" parent="@android:style/Animation.Dialog">
+    <style name="PullUpAnimDialog" parent="@android:style/Animation.Dialog">
         <item name="android:windowEnterAnimation">@anim/popupwindow_enter</item>
         <item name="android:windowExitAnimation">@anim/popupwindow_exit</item>
     </style>
     
-    <style name="DropPullAnimation" parent="@android:style/Animation.Dialog">
+    <style name="PullDownAnimDialog" parent="@android:style/Animation.Dialog">
         <item name="android:windowEnterAnimation">@anim/popupwindow_drop</item>
         <item name="android:windowExitAnimation">@anim/popupwindow_pull</item>
     </style>
     
-    <style name="MMTheme.DataSheet" parent="@android:style/Theme.Dialog">
+    <style name="MMTheme.Dialog" parent="@android:style/Theme.Dialog">
         <item name="android:windowFrame">@null</item>
         <item name="android:windowIsFloating">true</item>
         <item name="android:windowIsTranslucent">true</item>
@@ -18,11 +18,14 @@
         <item name="android:background">@android:color/transparent</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:backgroundDimEnabled">true</item>
-        <item name="android:windowAnimationStyle">@style/DataSheetAnimation</item>
     </style>
     
-    <style name="DropPullWindow" parent="@style/MMTheme.DataSheet">
-        <item name="android:windowAnimationStyle">@style/DropPullAnimation</item>
+    <style name="PullUp.Dialog" parent="@style/MMTheme.Dialog">
+        <item name="android:windowAnimationStyle">@style/PullUpAnimDialog</item>
+    </style>
+    
+    <style name="PullDown.Dialog" parent="@style/MMTheme.Dialog">
+        <item name="android:windowAnimationStyle">@style/PullDownAnimDialog</item>
     </style>
   
     <style name="dialog_translucent" parent="@android:style/Theme.Dialog">

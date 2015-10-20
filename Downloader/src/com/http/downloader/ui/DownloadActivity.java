@@ -5,13 +5,12 @@ import com.http.downloader.DownloadTask;
 import com.http.downloader.Downloader;
 import com.http.downloader.DownloadTask.DownloadCallback;
 import com.http.downloader.Downloader.DownloadResultCallback;
-import com.progress.downloader.R;
+import com.http.downloader.R;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -43,7 +42,10 @@ public class DownloadActivity extends Activity {
 	}
 
 	private void downloadImg() {
-		Downloader downloader = new Downloader(this, R.style.MMTheme_DataSheet);
+	    String titleText = "Downloading img ......";
+        String descText = "Please download latest version";
+        ApkManager.downloadApk(this, url, null, titleText, descText);
+		Downloader downloader = new Downloader(this, R.style.MMTheme_Dialog);
 		downloader.setTitleText("Downloading img ......");
 		downloader.setDescText("Please download latest version");
 		downloader.setNotificationId(NOTIFICATION_ID);

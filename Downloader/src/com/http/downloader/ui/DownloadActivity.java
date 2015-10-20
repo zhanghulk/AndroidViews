@@ -21,6 +21,7 @@ import android.widget.ImageView;
 public class DownloadActivity extends Activity {
 
 	protected static final String TAG = "DownloadActivity";
+	private static final int APK_INSTALL_REQUEST_CODE = 0x1;
 	private static final int NOTIFICATION_ID = 0x12;
 	String url = "http://img.pconline.com.cn/images/upload/upc/tx/wallpaper/1508/14/c0/11195389_1439563888459_800x600.jpg";
 	
@@ -44,22 +45,27 @@ public class DownloadActivity extends Activity {
 	private void downloadImg() {
 	    String titleText = "Downloading img ......";
         String descText = "Please download latest version";
-        ApkManager.downloadApk(this, url, null, titleText, descText);
-		Downloader downloader = new Downloader(this, R.style.MMTheme_Dialog);
-		downloader.setTitleText("Downloading img ......");
-		downloader.setDescText("Please download latest version");
-		downloader.setNotificationId(NOTIFICATION_ID);
-		downloader.setNotificationIcon(R.drawable.ic_launcher);
-		Intent contentIntent = new Intent(this, DownloadActivity.class);
-		downloader.setNotificationIntent(contentIntent , 0);
-		downloader.setCallback(new DownloadResultCallback() {
-			@Override
-			public void onDownloadResult(int taskId, String filePath, String errorMsg) {
-				setImg(filePath);
-				ApkManager.installApk(DownloadActivity.this, filePath, false, 1);
-			}
-		});
-		downloader.start(url, null);
+        ApkManager.downloadApk(this, url, null, titleText, descText, NOTIFICATION_ID, new DownloadResultCallback() {
+            @Override
+            public void onDownloadResult(int taskId, String filePath, String errorMsg) {
+                setImg(filePath);
+                ApkManager.installApk(DownloadActivity.this, filePath, false, APK_INSTALL_REQUEST_CODE);
+            }
+        });
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+	    switch (requestCode) {
+            case APK_INSTALL_REQUEST_CODE:
+                if(resultCode == RESULT_OK) {
+                }
+                break;
+
+            default:
+                break;
+        }
+	    super.onActivityResult(requestCode, resultCode, data);
 	}
 
 	private void startDownload() {

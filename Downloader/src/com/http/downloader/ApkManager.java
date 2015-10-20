@@ -21,22 +21,15 @@ public class ApkManager {
     public static final String PACKAGE_INSTALLER_NAME = "com.android.packageinstaller";
     public static final String PACKAGE_INSTALLER_ACTIVITY = "com.android.packageinstaller.PackageInstallerActivity";
     
-    private static final int NOTIFICATION_ID = 0x12;
-
-    public static void downloadApk(final Context context, String url, String filePath, String titleText, String descText) {
+    public static void downloadApk(final Context context, String url, String filePath,
+            String titleText, String descText, int notificationId, DownloadResultCallback callback) {
         Downloader downloader = new Downloader(context, R.style.PullUp_Dialog);
         downloader.setTitleText(titleText);
         downloader.setDescText(descText);
-        downloader.setNotificationId(NOTIFICATION_ID);
+        downloader.setNotificationId(notificationId);
         downloader.setNotificationIcon(R.drawable.ic_launcher);
-        Intent contentIntent = new Intent(ACTION_INSTALL_APK);
-        downloader.setNotificationIntent(contentIntent, 0);
-        downloader.setCallback(new DownloadResultCallback() {
-            @Override
-            public void onDownloadResult(int taskId, String filePath, String errorMsg) {
-                ApkManager.installApk(context, filePath, false, 1);
-            }
-        });
+        downloader.setNotifyServiceIntent(new Intent(ACTION_INSTALL_APK), 0);
+        downloader.setCallback(callback);
         downloader.start(url, filePath);
     }
 

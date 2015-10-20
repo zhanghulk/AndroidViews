@@ -32,6 +32,7 @@ public class ApkInstallEmptyActivity extends Activity {
     	super.onActivityResult(requestCode, resultCode, data);
 		Log.i(TAG, "onActivityResult:requestCode=" + requestCode + ", resultCode=" + resultCode);
 		if(REQUEST_ENTERPRISE_AGENT_INSTALL_CODE == requestCode) {
+		    
 		}
 		finish();
 	}

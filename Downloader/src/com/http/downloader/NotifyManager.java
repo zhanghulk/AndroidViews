@@ -39,10 +39,20 @@ public class NotifyManager {
 		this.titleText = titleText;
 	}
 
-	public void setContentIntent(Intent contentIntent, int requestCode) {
+	public void setActivityIntent(Intent contentIntent, int requestCode) {
 		notification.contentIntent = PendingIntent.getActivity(mContext,
 				requestCode, contentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 	}
+
+	public void setServiceIntent(Intent contentIntent, int requestCode) {
+        notification.contentIntent = PendingIntent.getService(mContext,
+                requestCode, contentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+	public void setBroadcastIntent(Intent contentIntent, int requestCode) {
+        notification.contentIntent = PendingIntent.getBroadcast(mContext,
+                requestCode, contentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
 
 	private void init() {
 		notification = new Notification(icon, titleText, System.currentTimeMillis());

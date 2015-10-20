@@ -119,11 +119,23 @@ public class Downloader implements DownloadCallback, OnClickListener {
 		}
 	}
 
-	public void setNotificationIntent(Intent contentIntent, int requestCode) {
+	public void setNotifyActivityIntent(Intent contentIntent, int requestCode) {
 		if(mNotifyManager != null) {
-			mNotifyManager.setContentIntent(contentIntent, requestCode);
+			mNotifyManager.setActivityIntent(contentIntent, requestCode);
 		}
 	}
+
+	public void setNotifyServiceIntent(Intent contentIntent, int requestCode) {
+        if(mNotifyManager != null) {
+            mNotifyManager.setActivityIntent(contentIntent, requestCode);
+        }
+    }
+	
+	public void setNotifyBroadcastIntent(Intent contentIntent, int requestCode) {
+        if(mNotifyManager != null) {
+            mNotifyManager.setActivityIntent(contentIntent, requestCode);
+        }
+    }
 
 	public void noyify() {
 		noyify(notificationId);

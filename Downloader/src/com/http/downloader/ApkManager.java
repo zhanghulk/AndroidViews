@@ -4,12 +4,15 @@ package com.http.downloader;
 import java.io.File;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 
 public class ApkManager {
 
     ///install apk key:
+    public static final String INTENT_EXTRA_APK_URL = "url";
+    public static final String INTENT_EXTRA_APK_FILE_PATH = "file_path/vnd.android.package-archive";
     public static final String APK_FILE_TYPE = "application/vnd.android.package-archive";
     public static final String PACKAGE_INSTALLER_NAME = "com.android.packageinstaller";
     public static final String PACKAGE_INSTALLER_ACTIVITY = "com.android.packageinstaller.PackageInstallerActivity";
@@ -35,12 +38,16 @@ public class ApkManager {
      * @param act
      * @param path
      */
-    public static boolean installApk(Activity activity, String apkPath, boolean addTaskFlag, int requestCode) {
+    public static boolean installApk(Context context, String apkPath, boolean addTaskFlag, int requestCode) {
         if(!isApkFile(apkPath)){
             return false;
         }
         Intent intent = ApkManager.getInstallIntent(apkPath, addTaskFlag);
-        activity.startActivityForResult(intent, requestCode);
+        if(context instanceof Activity) {
+            ((Activity)context).startActivityForResult(intent, requestCode);
+        } else {
+            context.startActivity(intent);
+        }
         return true;
     }
 

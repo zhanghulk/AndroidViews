@@ -103,8 +103,9 @@ public class Downloader implements DownloadCallback, OnClickListener {
 		this.gravity = gravity;
 	}
 
-	public void start(String url) {
+	public void start(String url, String fileDir) {
 		downloadTask = new DownloadTask(url);
+		downloadTask.setFileDir(fileDir);
 		downloadTask.setCallback(this);
 		new Thread(downloadTask).start();
 		if (theme != 0) {

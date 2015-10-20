@@ -57,7 +57,7 @@ public class DownloadActivity extends Activity {
 				ApkManager.installApk(DownloadActivity.this, filePath, false, 1);
 			}
 		});
-		downloader.start(url);
+		downloader.start(url, null);
 	}
 
 	private void startDownload() {

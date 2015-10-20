@@ -29,7 +29,7 @@ public class DownloadTask implements Runnable {
 
     public DownloadTask(String url) {
         this.url = url;
-        fileDir = Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
+        fileDir = getStorageDir();
         fileName = url.substring(url.lastIndexOf(File.separator) + 1);
     }
 
@@ -37,6 +37,10 @@ public class DownloadTask implements Runnable {
         this.url = url;
         this.fileDir = fileDir;
         this.fileName = fileName;
+    }
+
+    private String getStorageDir() {
+        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
     }
 
     public void setTaskId(int taskId) {
@@ -56,7 +60,9 @@ public class DownloadTask implements Runnable {
     }
 
     public void setFileDir(String fileDir) {
-        this.fileDir = fileDir;
+        if(fileDir != null && fileDir.length() > 0) {
+            this.fileDir = fileDir;
+        }
     }
 
     public String getFileName() {
@@ -68,6 +74,9 @@ public class DownloadTask implements Runnable {
     }
 
     public String getFilePath() {
+        if (fileDir == null || fileDir.length() == 0) {
+            fileDir = getStorageDir();
+        }
         File dir = new File(fileDir);
         if(!dir.exists()) {
             dir.mkdirs();

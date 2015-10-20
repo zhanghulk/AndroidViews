@@ -3,9 +3,11 @@ package com.http.downloader;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,24 +23,34 @@ public class Downloader implements DownloadCallback, OnClickListener {
 		void onDownloadResult(int taskId, String filePath, String errorMsg);
 	}
 
+	public static final int NOTIFICATION_ID = 0x1212;
+
+    private static final String TAG = "Downloader";
+
 	private Context mContext;
-	private Dialog dialog;
-	private View view;
-	private TextView titleTv;
-	private TextView descTv;
-	private TextView progressTv;
-	private ProgressBar progressBar;
-	private Button mBackgroundBtn, mCancelBtn;
+	private Dialog mDialog;
+	private ProgressNotification mNotification;
+	private View mView;
+	private TextView mTitleTv;
+	private TextView mDescTv;
+	private TextView mProgressTv;
+	private ProgressBar mProgressBar;
+	private Button mDoInBackgroundBtn, mCancelBtn;
+
 	private int theme;
 	private int gravity = Gravity.BOTTOM;
 	private int fileLength = 1;
-	private int progressCount = 0;
-	private int progress = 0;
-	int notificationId = 1;
+	private int mProgressCount = 0;
+	private int mProgress = 0;
+	int notificationId = NOTIFICATION_ID;
+	int taskId = 0;
+	boolean isShowDialog = true;
+	boolean dialogCanceledOnTouchOutside = true;
 	
 	private DownloadTask downloadTask;
 	private DownloadResultCallback callback;
-	NotifyManager mNotifyManager;
+	
+	private boolean debug = false;
 
 	public void setCallback(DownloadResultCallback callback) {
 		this.callback = callback;
@@ -58,97 +70,109 @@ public class Downloader implements DownloadCallback, OnClickListener {
 	};
 
 	public Downloader(Context context) {
+		this(context, 0);
+	}
+
+	public Downloader(Context context, boolean showDialog) {
 		mContext = context;
+		isShowDialog = showDialog;
+		init();
 	}
 
 	public Downloader(Context context, int dialogTheme) {
-		mContext = context;
-		theme = dialogTheme;
-		if (dialogTheme > 0) {
-			initView();
-		}
-	}
+        mContext = context;
+        theme = dialogTheme;
+        init();
+    }
 
-	public void setTitleText(CharSequence title) {
+	public static String getStorageDir() {
+        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
+    }
+
+	public void setDialogCanceledOnTouchOutside(boolean canceled) {
+        this.dialogCanceledOnTouchOutside = canceled;
+    }
+
+	public void setTaskId(int taskId) {
+        this.taskId = taskId;
+    }
+
+	public void setTitleText(String titleText) {
 		if (theme == 0) {
-			dialog.setTitle(title);
-			titleTv.setVisibility(View.GONE);
+			mDialog.setTitle(titleText);
+			mTitleTv.setVisibility(View.GONE);
 		} else {
-			titleTv.setText(title);
+			mTitleTv.setText(titleText);
 		}
+		mNotification.setTitleText(titleText);
 	}
 
-	public void setDescText(CharSequence descText) {
-		descTv.setText(descText);
+	public void setDescText(String descText) {
+		mDescTv.setText(descText);
 	}
 
-	public void setBackgroundBtnText(CharSequence text) {
-		mBackgroundBtn.setText(text);
+	public void setDoInBackgroundText(String text) {
+		mDoInBackgroundBtn.setText(text);
 	}
 	
-	public void setCancelBtnText(CharSequence text) {
+	public void setCancelBtnText(String text) {
 		mCancelBtn.setText(text);
 	}
 
 	public void setTheme(int dialogTheme) {
 		theme = dialogTheme;
-		initView();
+		init();
 	}
 
 	public void setGravity(int gravity) {
 		this.gravity = gravity;
 	}
 
-	public void start(String url, String fileDir) {
+	public void start(String url, String filePath) {
 		downloadTask = new DownloadTask(url);
-		downloadTask.setFileDir(fileDir);
+		downloadTask.setFilePath(filePath);
 		downloadTask.setCallback(this);
 		new Thread(downloadTask).start();
-		if (theme != 0) {
-			showDialog();
-		}
+		if (isShowDialog) {
+		    showDialog();
+        }
+		noyify();
 	}
 
-	public void setNotificationId(int notificationId) {
-		this.notificationId = notificationId;
+	public void setNotificationId(int id) {
+	    mNotification.setId(id);
 	}
 
 	public void setNotificationIcon(int icon) {
-		if(mNotifyManager != null) {
-			mNotifyManager.setIcon(icon);
-		}
-	}
+        mNotification.setIcon(icon);
+    }
+
+	public void setNotificationTitleText(String titleText) {
+	    mNotification.setTitleText(titleText);
+    }
 
 	public void setNotifyActivityIntent(Intent contentIntent, int requestCode) {
-		if(mNotifyManager != null) {
-			mNotifyManager.setActivityIntent(contentIntent, requestCode);
-		}
+	    mNotification.setActivityIntent(contentIntent, requestCode);
 	}
 
 	public void setNotifyServiceIntent(Intent contentIntent, int requestCode) {
-        if(mNotifyManager != null) {
-            mNotifyManager.setActivityIntent(contentIntent, requestCode);
-        }
+	    mNotification.setActivityIntent(contentIntent, requestCode);
     }
 	
 	public void setNotifyBroadcastIntent(Intent contentIntent, int requestCode) {
-        if(mNotifyManager != null) {
-            mNotifyManager.setActivityIntent(contentIntent, requestCode);
-        }
+	    mNotification.setActivityIntent(contentIntent, requestCode);
     }
 
 	public void noyify() {
 		noyify(notificationId);
 	}
 
-	public void noyify(int notificationId) {
-		mNotifyManager = new NotifyManager(mContext);
-		mNotifyManager.notify(notificationId);
+	public void noyify(int id) {
+	    mNotification.notify(id);
 	}
 
 	public void doInDackground() {
 		dismissDialog();
-		noyify();
 	}
 
 	public void cancelTask() {
@@ -160,63 +184,64 @@ public class Downloader implements DownloadCallback, OnClickListener {
 	}
 
 	public void cancelNotification() {
-        if (mNotifyManager != null) {
-            mNotifyManager.cancel();
+        if (mNotification != null) {
+            mNotification.cancel();
         }
     }
 
 	public void showDialog() {
-		DialogManager.showViewDialog(mContext, dialog, view, gravity, null,
+	    mDialog.setCanceledOnTouchOutside(dialogCanceledOnTouchOutside );
+		DialogManager.showViewDialog(mContext, mDialog, mView, gravity, null,
 				null, false);
 	}
 
 	public void dismissDialog() {
-		if (dialog != null && dialog.isShowing()) {
-			dialog.dismiss();
+		if (mDialog != null && mDialog.isShowing()) {
+			mDialog.dismiss();
 		}
 	}
 
-	public void initView() {
-		createDialog();
-		view = LayoutInflater.from(mContext).inflate(
-				R.layout.progress_dialog, null);
-		titleTv = (TextView) view.findViewById(R.id.title_tv);
-		progressTv = (TextView) view.findViewById(R.id.progress_tv);
-		progressBar = (ProgressBar) view.findViewById(R.id.progressBar);
-		descTv = (TextView) view.findViewById(R.id.desc_tv);
-		progressBar.setMax(100);
-		view.findViewById(R.id.do_backgroun_btn).setOnClickListener(this);
-		view.findViewById(R.id.cancel_btn).setOnClickListener(this);
+	public void init() {
+	    mNotification = new ProgressNotification(mContext, notificationId);
+	    if (isShowDialog) {
+	        createDialog();
+	        mView = LayoutInflater.from(mContext).inflate(
+	                R.layout.progress_dialog, null);
+	        mTitleTv = (TextView) mView.findViewById(R.id.title_tv);
+	        mProgressTv = (TextView) mView.findViewById(R.id.progress_tv);
+	        mProgressBar = (ProgressBar) mView.findViewById(R.id.progressBar);
+	        mDescTv = (TextView) mView.findViewById(R.id.desc_tv);
+	        mProgressBar.setMax(100);
+	        mView.findViewById(R.id.do_backgroun_btn).setOnClickListener(this);
+	        mView.findViewById(R.id.cancel_btn).setOnClickListener(this);
+        }
 	}
 
 	private void createDialog() {
 		if (theme == 0) {
-			dialog = new Dialog(mContext);
+			mDialog = new Dialog(mContext);
 		} else {
-			dialog = new Dialog(mContext, theme);
+			mDialog = new Dialog(mContext, theme);
 		}
 	}
 
 	public void setProgressCount(int progressByieCount) {
-		this.progressCount = progressByieCount;
+		this.mProgressCount = progressByieCount;
 		mHandler.post(new Runnable() {
 			public void run() {
-				progressTv.setText(progressCount + "/" + fileLength);
+				mProgressTv.setText(mProgressCount + "/" + fileLength);
 			}
 		});
 	}
 
-	public void setProgress(final int progress) {
-		this.progress = progress;
-		
+	public void setProgress(int progress) {
+		this.mProgress = progress;
 		mHandler.post(new Runnable() {
 			public void run() {
-				progressBar.setProgress(progress);
+				mProgressBar.setProgress(mProgress);
 			}
 		});
-		if (mNotifyManager != null) {
-			mNotifyManager.updateProgress(progress);
-		}
+		mNotification.updateProgress(mProgress);
 	}
 
 	@Override
@@ -235,22 +260,32 @@ public class Downloader implements DownloadCallback, OnClickListener {
 	}
 
 	@Override
-    public void onDownloadStart(int taskId, int contentLength) {
+    public void onDownloadStart(int contentLength) {
+	    Log.i(TAG, "onDownloadStart contentLength=" + contentLength);
         fileLength = contentLength;
         setProgressCount(0);
     }
 
     @Override
-    public void onDownloadProgress(int taskId, final int progress, int progressCount) {
-        setProgressCount(progressCount);
-        setProgress(progress);
+    public void onDownloadProgress(int progress, int progressCount) {
+        log("onDownloadProgress mProgress=" + progress + ",mProgress=" + progress);
+        if(mProgress != progress) {
+            setProgressCount(progressCount);
+            setProgress(progress);
+        }
     }
 
     @Override
-    public void onDownloadFinished(int taskId, String filePath, String errorMsg) {
+    public void onDownloadFinished(String filePath, int fileLength, String errorMsg) {
+        Log.i(TAG, "onDownloadFinished fileLength=" + fileLength + ",filePath=" + filePath + ",errorMsg=" + errorMsg);
         if (callback != null) {
             callback.onDownloadResult(taskId, filePath, errorMsg);
         }
         dismissDialog();
+        mNotification.setTitleText("Download completed");
+    }
+
+    private void log(String msg) {
+        if(debug) Log.i(TAG, msg);
     }
 }

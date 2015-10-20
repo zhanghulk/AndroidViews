@@ -26,6 +26,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name="com.http.downloader.ui.ApkInstallEmptyActivity" >
+            <intent-filter>
+                <action android:name="com.http.downloader.INSTALL_APK" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

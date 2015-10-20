@@ -15,6 +15,8 @@ public class ApkManager {
     public static final String ACTION_INSTALL_APK = "com.http.downloader.INSTALL_APK";
     public static final String INTENT_EXTRA_APK_URL = "url";
     public static final String INTENT_EXTRA_APK_FILE_PATH = "file_path";
+    
+    public static final String APK_TEST_URL = "http://apk.r1.market.hiapk.com/data/upload/marketClient/HiMarket6.0.86_1442302645972.apk";
 
     ///install apk key:
     public static final String APK_FILE_TYPE = "application/vnd.android.package-archive";
@@ -22,13 +24,15 @@ public class ApkManager {
     public static final String PACKAGE_INSTALLER_ACTIVITY = "com.android.packageinstaller.PackageInstallerActivity";
     
     public static void downloadApk(final Context context, String url, String filePath,
-            String titleText, String descText, int notificationId, DownloadResultCallback callback) {
+            String titleText, String descText, DownloadResultCallback callback) {
         Downloader downloader = new Downloader(context, R.style.PullUp_Dialog);
         downloader.setTitleText(titleText);
         downloader.setDescText(descText);
-        downloader.setNotificationId(notificationId);
         downloader.setNotificationIcon(R.drawable.ic_launcher);
-        downloader.setNotifyServiceIntent(new Intent(ACTION_INSTALL_APK), 0);
+        downloader.setNotificationTitleText(titleText);
+        Intent intent = new Intent(ACTION_INSTALL_APK);
+        intent.putExtra(INTENT_EXTRA_APK_FILE_PATH, filePath);
+        downloader.setNotifyActivityIntent(intent, 0);
         downloader.setCallback(callback);
         downloader.start(url, filePath);
     }

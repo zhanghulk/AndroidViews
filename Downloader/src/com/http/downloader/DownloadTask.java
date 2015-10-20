@@ -13,38 +13,41 @@ import android.os.Environment;
 public class DownloadTask implements Runnable {
 
     public interface DownloadCallback {
-        void onDownloadStart(int taskId, int fileLength);
-        void onDownloadProgress(int taskId, int progress, int progressCount);
-        void onDownloadFinished(int taskId, String filePath, String errorMsg);
+        void onDownloadStart(int contentLength);
+        void onDownloadProgress(int progress, int progressCount);
+        void onDownloadFinished(String filePath, int fileLength, String errorMsg);
     }
 
-    private int taskId = 0;
     private String url;
-    private String fileDir;
-    private String fileName;
+    private String filePath;
     
-    private int timeoutMillis;
     private DownloadCallback callback;
     private boolean canceled = false;
 
     public DownloadTask(String url) {
         this.url = url;
-        fileDir = getStorageDir();
-        fileName = url.substring(url.lastIndexOf(File.separator) + 1);
+        filePath = getDefultFilePath();
     }
 
-    public DownloadTask(String url, String fileDir, String fileName) {
+    public DownloadTask(String url, String filePath) {
         this.url = url;
-        this.fileDir = fileDir;
-        this.fileName = fileName;
+        this.filePath = filePath;
     }
 
     private String getStorageDir() {
         return Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
     }
 
-    public void setTaskId(int taskId) {
-        this.taskId = taskId;
+    public String getDefultFilePath() {
+        return getStorageDir() + getDefultFileName();
+    }
+
+    public String getDefultFileName() {
+        String fileName = "temp.tmp";
+        if (url != null && url.length() > 0) {
+            fileName = url.substring(url.lastIndexOf(File.separator) + 1);
+        }
+        return fileName;
     }
 
     public String getUrl() {
@@ -55,33 +58,22 @@ public class DownloadTask implements Runnable {
         this.url = url;
     }
 
-    public String getFileDir() {
-        return fileDir;
-    }
-
-    public void setFileDir(String fileDir) {
-        if(fileDir != null && fileDir.length() > 0) {
-            this.fileDir = fileDir;
-        }
-    }
-
-    public String getFileName() {
-        return fileName;
-    }
-
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
-    }
-
     public String getFilePath() {
-        if (fileDir == null || fileDir.length() == 0) {
-            fileDir = getStorageDir();
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+
+    public String createFilePath() {
+        if (filePath == null || filePath.length() == 0) {
+            filePath = getDefultFilePath();
         }
-        File dir = new File(fileDir);
+        File dir = new File(filePath);
         if(!dir.exists()) {
             dir.mkdirs();
         }
-        String filePath = fileDir + fileName;
         File file = new File(filePath);
         if(file.exists()) {
             deleteFile(file);
@@ -110,10 +102,6 @@ public class DownloadTask implements Runnable {
         this.callback = callback;
     }
 
-    public void setTimeoutMillis(int timeoutMillis) {
-        this.timeoutMillis = timeoutMillis;
-    }
-
     public void setCanceled(boolean canceled) {
         this.canceled = canceled;
     }
@@ -128,44 +116,41 @@ public class DownloadTask implements Runnable {
         FileOutputStream output = null;
         String errorMsg = null;
         String filePath = null;
+        int count = 0;
+        int _Progress = 0;
         try {
             if (canceled) return false;
             URL _url = new URL(url);
             HttpURLConnection urlConn = (HttpURLConnection) _url
                     .openConnection();
-            urlConn.setConnectTimeout(timeoutMillis);
             int len = urlConn.getContentLength();
             if(callback != null) {
-                callback.onDownloadStart(taskId, len);
+                callback.onDownloadStart(len);
             }
             if(len <= 0) {
                 errorMsg = "Content Length is 0";
                 return false;
             }
             input = urlConn.getInputStream();
-            int count = 0;
             if(input != null) {
-                filePath = getFilePath();
+                filePath = createFilePath();
                 File file = new File(filePath);
                 output = new FileOutputStream(file);
-                byte[] buffer = new byte[1024];
+                byte[] buffer = new byte[2 * 1024];
                 int read = 0;
                 while ((read = input.read(buffer)) != -1) {
                     output.write(buffer);
                     count += read;
-                    if(callback != null) {
-                        int progress = (count * 100) / len;
-                        callback.onDownloadProgress(taskId, progress, count);
+                    int progress = (count * 100) / len;
+                    if(_Progress != progress) {
+                        if(callback != null) {
+                            callback.onDownloadProgress(progress, count);
+                        }
                     }
                     if (canceled) {
                         deleteFile(file);
                         output.close();
                         return false;
-                    }
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
                     }
                 }
             }
@@ -189,7 +174,7 @@ public class DownloadTask implements Runnable {
                 }
             }
             if(callback != null) {
-                callback.onDownloadFinished(taskId, filePath, errorMsg);
+                callback.onDownloadFinished(filePath, count, errorMsg);
             }
         }
         return true;

@@ -3,6 +3,7 @@ package com.http.downloader;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -42,6 +43,7 @@ public class DownloadTask extends
     private Callback mCallback = null;
     private boolean debug = false;
     String errorMsg = null;
+    String url;
     String filePath;
     private boolean mCanceled = false;
 
@@ -56,12 +58,20 @@ public class DownloadTask extends
         Log.d(TAG, "pre execute");
     }
 
-    public String getDefultFileName(String url) {
+    private String getDefultFileName() {
         String fileName = "temp.tmp";
         if (url != null && url.length() > 0) {
             fileName = url.substring(url.lastIndexOf(File.separator) + 1);
         }
         return fileName;
+    }
+
+    private String getStorageDir() {
+        return Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
+    }
+
+    public String getDefultFilePath() {
+        return getStorageDir() + getDefultFileName();
     }
 
     @Override
@@ -70,14 +80,18 @@ public class DownloadTask extends
             throw new IllegalArgumentException(TAG + " only accepts " + PARAMS_NUM
                     + " params.");
         }
-        String url = params[0];
+        url = params[0];
         filePath = params[1];
         if (TextUtils.isEmpty(url)) {
-            throw new IllegalArgumentException("url is null.");
-        } else if (TextUtils.isEmpty(filePath)) {
-            throw new IllegalArgumentException("download path is null.");
+            throw new IllegalArgumentException("The url must be not null");
         }
-
+        if (TextUtils.isEmpty(filePath)) {
+            filePath = getDefultFilePath();
+            //throw new IllegalArgumentException("download path is null.");
+        }
+        if (mCanceled) {
+            return State.CANCELD;
+        }
         State state = State.UNKOWN_ERROR;
         HttpClient httpClient = getHttpClient(mContext);
         HttpGet request = new HttpGet(url);
@@ -150,16 +164,16 @@ public class DownloadTask extends
 
     @Override
     protected void onProgressUpdate(Integer... values) {
-        if(debug ) Log.i(TAG, "progress:" + values[0]);
-        super.onProgressUpdate(values);
+        int progress = values[0];
+        int count = values[1];
+        if(debug ) Log.i(TAG, "progress:" + progress);
         if (mCallback != null) {
-            mCallback.onProgressUpdate(values[0], values[1]);
+            mCallback.onProgressUpdate(progress, count);
         }
     }
 
     protected void onPostExecute(State state) {
         Log.i(TAG, "post execute state:" + state);
-        super.onPostExecute(state);
         if (mCallback != null) {
             mCallback.onFinished(state, filePath, errorMsg);
         }
@@ -180,7 +194,7 @@ public class DownloadTask extends
     public String createFilePath(String filePath, String url) {
         File file = new File(filePath);
         if (file.isDirectory()) {
-            filePath = filePath + "/" + getDefultFileName(url);
+            filePath = filePath + "/" + getDefultFileName();
         }
         if(file.isFile() && file.exists()) {
             file.delete();

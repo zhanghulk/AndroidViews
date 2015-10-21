@@ -3,7 +3,7 @@ package com.http.downloader;
 
 import java.io.File;
 
-import com.http.downloader.Downloader.DownloadResultCallback;
+import com.http.downloader.DownloadDialog.DownloadResultCallback;
 
 import android.app.Activity;
 import android.content.Context;
@@ -25,16 +25,16 @@ public class ApkManager {
     
     public static void downloadApk(final Context context, String url, String filePath,
             String titleText, String descText, DownloadResultCallback callback) {
-        Downloader downloader = new Downloader(context, R.style.PullUp_Dialog);
-        downloader.setTitleText(titleText);
-        downloader.setDescText(descText);
-        downloader.setNotificationIcon(R.drawable.ic_launcher);
-        downloader.setNotificationTitleText(titleText);
+        DownloadDialog downloadDialog = new DownloadDialog(context, R.style.PullUp_Dialog);
+        downloadDialog.setTitleText(titleText);
+        downloadDialog.setDescText(descText);
+        downloadDialog.setNotificationIcon(R.drawable.ic_launcher);
+        downloadDialog.setNotificationTitleText(titleText);
         Intent intent = new Intent(ACTION_INSTALL_APK);
         intent.putExtra(INTENT_EXTRA_APK_FILE_PATH, filePath);
-        downloader.setNotifyActivityIntent(intent, 0);
-        downloader.setCallback(callback);
-        downloader.start(url, filePath);
+        downloadDialog.setNotifyActivityIntent(intent, 0);
+        downloadDialog.setCallback(callback);
+        downloadDialog.start(url, filePath);
     }
 
     public static Intent getInstallIntent(String apkPath, boolean newTaskFlag) {

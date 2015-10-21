@@ -1,9 +1,10 @@
 package com.http.downloader.ui;
 
 import com.http.downloader.ApkManager;
-import com.http.downloader.Downloader;
-import com.http.downloader.Downloader.DownloadResultCallback;
+import com.http.downloader.DownloadDialog;
+import com.http.downloader.DownloadDialog.DownloadResultCallback;
 import com.http.downloader.R;
+import com.http.downloader.State;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -13,7 +14,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.ImageView;
 
 public class DownloadActivity extends Activity {
@@ -21,6 +21,7 @@ public class DownloadActivity extends Activity {
 	protected static final String TAG = "DownloadActivity";
 	private static final int APK_INSTALL_REQUEST_CODE = 0x1;
 	String url = "http://img.pconline.com.cn/images/upload/upc/tx/wallpaper/1508/14/c0/11195389_1439563888459_800x600.jpg";
+	String filePath = DownloadDialog.getStorageDir();
 	
 	ImageView img;
 	@Override
@@ -45,11 +46,13 @@ public class DownloadActivity extends Activity {
 	private void downloadApk() {
         String titleText = "Downloading APK ......";
         String descText = "Please download latest version";
-        ApkManager.downloadApk(this, ApkManager.APK_TEST_URL, null, titleText, descText, new DownloadResultCallback() {
+        ApkManager.downloadApk(this, ApkManager.APK_TEST_URL, filePath, titleText, descText, new DownloadResultCallback() {
             @Override
-            public void onDownloadResult(int taskId, String filePath, String errorMsg) {
-                Log.i(TAG, "Download apk filePath: " + filePath);
-                ApkManager.installApk(DownloadActivity.this, filePath, false, APK_INSTALL_REQUEST_CODE);
+            public void onDownloadResult(int taskId, State state, String filePath, String errorMsg) {
+                Log.i(TAG, "Download apk state: " + state + ", filePath: " + filePath);
+                if (state == State.SUCCESS) {
+                    ApkManager.installApk(DownloadActivity.this, filePath, false, APK_INSTALL_REQUEST_CODE);
+                }
             }
         });
     }
@@ -71,18 +74,20 @@ public class DownloadActivity extends Activity {
 	private void downloadImg() {
         String titleText = "Please download net image";
         String descText = "Downloading img ......";
-        Downloader downloader = new Downloader(this);
-        downloader.setTitleText(titleText);
-        downloader.setDescText(descText);
-        downloader.setNotificationId(11);
-        downloader.setCallback(new DownloadResultCallback() {
+        DownloadDialog downloadDialog = new DownloadDialog(this);
+        downloadDialog.setTitleText(titleText);
+        downloadDialog.setDescText(descText);
+        downloadDialog.setNotificationId(11);
+        downloadDialog.setCallback(new DownloadResultCallback() {
             @Override
-            public void onDownloadResult(int taskId, String filePath, String errorMsg) {
-                Log.i(TAG, "Download Image filePath: " + filePath);
-                setImg(filePath);
+            public void onDownloadResult(int taskId, State state, String filePath, String errorMsg) {
+                Log.i(TAG, "Download Image state: " + state + ",filePath: " + filePath);
+                if (state == State.SUCCESS) {
+                    setImg(filePath);
+                }
             }
         });
-        downloader.start(url, null);//save in storage root
+        downloadDialog.start(url, filePath);//save in storage root
     }
 
 	public void setImg(final String filePath) {

@@ -1,291 +1,197 @@
 package com.http.downloader;
 
-import android.app.Dialog;
-import android.content.Context;
-import android.content.Intent;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
-import android.util.Log;
-import android.view.Gravity;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 
-import com.http.downloader.DownloadTask.DownloadCallback;
+public class Downloader implements Runnable {
 
-public class Downloader implements DownloadCallback, OnClickListener {
-	public interface DownloadResultCallback {
-		void onDownloadResult(int taskId, String filePath, String errorMsg);
-	}
-
-	public static final int NOTIFICATION_ID = 0x1212;
-
-    private static final String TAG = "Downloader";
-
-	private Context mContext;
-	private Dialog mDialog;
-	private ProgressNotification mNotification;
-	private View mView;
-	private TextView mTitleTv;
-	private TextView mDescTv;
-	private TextView mProgressTv;
-	private ProgressBar mProgressBar;
-	private Button mDoInBackgroundBtn, mCancelBtn;
-
-	private int theme;
-	private int gravity = Gravity.BOTTOM;
-	private int fileLength = 1;
-	private int mProgressCount = 0;
-	private int mProgress = 0;
-	int notificationId = NOTIFICATION_ID;
-	int taskId = 0;
-	boolean isShowDialog = true;
-	boolean dialogCanceledOnTouchOutside = true;
-	
-	private DownloadTask downloadTask;
-	private DownloadResultCallback callback;
-	
-	private boolean debug = false;
-
-	public void setCallback(DownloadResultCallback callback) {
-		this.callback = callback;
-	}
-
-	Handler mHandler = new Handler(Looper.getMainLooper()) {
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-			case 0:
-
-				break;
-
-			default:
-				break;
-			}
-		};
-	};
-
-	public Downloader(Context context) {
-		this(context, 0);
-	}
-
-	public Downloader(Context context, boolean showDialog) {
-		mContext = context;
-		isShowDialog = showDialog;
-		init();
-	}
-
-	public Downloader(Context context, int dialogTheme) {
-        mContext = context;
-        theme = dialogTheme;
-        init();
+    public interface DownloadCallback {
+        void onDownloadStart(int contentLength);
+        void onDownloadProgress(int progress, int progressCount);
+        void onDownloadFinished(State state, String filePath, String errorMsg);
     }
 
-	public static String getStorageDir() {
+    private String url;
+    private String filePath;
+    
+    private DownloadCallback callback;
+    private boolean canceled = false;
+
+    public Downloader(String url) {
+        this.url = url;
+        filePath = getDefultFilePath();
+    }
+
+    public Downloader(String url, String filePath) {
+        this.url = url;
+        this.filePath = filePath;
+    }
+
+    private String getStorageDir() {
         return Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
     }
 
-	public void setDialogCanceledOnTouchOutside(boolean canceled) {
-        this.dialogCanceledOnTouchOutside = canceled;
+    public String getDefultFilePath() {
+        return getStorageDir() + getDefultFileName();
     }
 
-	public void setTaskId(int taskId) {
-        this.taskId = taskId;
-    }
-
-	public void setTitleText(String titleText) {
-		if (theme == 0) {
-			mDialog.setTitle(titleText);
-			mTitleTv.setVisibility(View.GONE);
-		} else {
-			mTitleTv.setText(titleText);
-		}
-		mNotification.setTitleText(titleText);
-	}
-
-	public void setDescText(String descText) {
-		mDescTv.setText(descText);
-	}
-
-	public void setDoInBackgroundText(String text) {
-		mDoInBackgroundBtn.setText(text);
-	}
-	
-	public void setCancelBtnText(String text) {
-		mCancelBtn.setText(text);
-	}
-
-	public void setTheme(int dialogTheme) {
-		theme = dialogTheme;
-		init();
-	}
-
-	public void setGravity(int gravity) {
-		this.gravity = gravity;
-	}
-
-	public void start(String url, String filePath) {
-		downloadTask = new DownloadTask(url);
-		downloadTask.setFilePath(filePath);
-		downloadTask.setCallback(this);
-		new Thread(downloadTask).start();
-		if (isShowDialog) {
-		    showDialog();
+    public String getDefultFileName() {
+        String fileName = "temp.tmp";
+        if (url != null && url.length() > 0) {
+            fileName = url.substring(url.lastIndexOf(File.separator) + 1);
         }
-		noyify();
-	}
-
-	public void setNotificationId(int id) {
-	    mNotification.setId(id);
-	}
-
-	public void setNotificationIcon(int icon) {
-        mNotification.setIcon(icon);
+        return fileName;
     }
 
-	public void setNotificationTitleText(String titleText) {
-	    mNotification.setTitleText(titleText);
+    public String getUrl() {
+        return url;
     }
 
-	public void setNotifyActivityIntent(Intent contentIntent, int requestCode) {
-	    mNotification.setActivityIntent(contentIntent, requestCode);
-	}
-
-	public void setNotifyServiceIntent(Intent contentIntent, int requestCode) {
-	    mNotification.setActivityIntent(contentIntent, requestCode);
-    }
-	
-	public void setNotifyBroadcastIntent(Intent contentIntent, int requestCode) {
-	    mNotification.setActivityIntent(contentIntent, requestCode);
+    public void setUrl(String url) {
+        this.url = url;
     }
 
-	public void noyify() {
-		noyify(notificationId);
-	}
+    public String getFilePath() {
+        return filePath;
+    }
 
-	public void noyify(int id) {
-	    mNotification.notify(id);
-	}
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
 
-	public void doInDackground() {
-		dismissDialog();
-	}
+    public String createFilePath(String filePath) {
+        if (filePath == null || filePath.length() == 0) {
+            filePath = getDefultFilePath();
+        }
+        File file = new File(filePath);
+        if (file.isDirectory()) {
+            filePath = filePath + "/" + getDefultFileName();
+        }
+        if(file.isFile() && file.exists()) {
+            deleteFile(file);
+            System.out.println("DELETE file: " + filePath);
+        }
+        File dir = new File(file.getParent());
+        if(!dir.exists()) {
+            dir.mkdirs();
+        }
+        try {
+            boolean res = file.createNewFile();
+            System.out.println("createNewFile: " + res + ", file: " + file);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return filePath;
+    }
 
-	public void cancelTask() {
-		if(downloadTask != null) {
-			downloadTask.setCanceled(true);
-		}
-		dismissDialog();
-		cancelNotification();
-	}
-
-	public void cancelNotification() {
-        if (mNotification != null) {
-            mNotification.cancel();
+    private void deleteFile(File file) {
+        if(file != null && file.exists()) {
+            file.delete();
         }
     }
 
-	public void showDialog() {
-	    mDialog.setCanceledOnTouchOutside(dialogCanceledOnTouchOutside );
-		DialogManager.showViewDialog(mContext, mDialog, mView, gravity, null,
-				null, false);
-	}
+    public DownloadCallback getCallback() {
+        return callback;
+    }
 
-	public void dismissDialog() {
-		if (mDialog != null && mDialog.isShowing()) {
-			mDialog.dismiss();
-		}
-	}
+    public void setCallback(DownloadCallback callback) {
+        this.callback = callback;
+    }
 
-	public void init() {
-	    mNotification = new ProgressNotification(mContext, notificationId);
-	    if (isShowDialog) {
-	        createDialog();
-	        mView = LayoutInflater.from(mContext).inflate(
-	                R.layout.progress_dialog, null);
-	        mTitleTv = (TextView) mView.findViewById(R.id.title_tv);
-	        mProgressTv = (TextView) mView.findViewById(R.id.progress_tv);
-	        mProgressBar = (ProgressBar) mView.findViewById(R.id.progressBar);
-	        mDescTv = (TextView) mView.findViewById(R.id.desc_tv);
-	        mProgressBar.setMax(100);
-	        mView.findViewById(R.id.do_backgroun_btn).setOnClickListener(this);
-	        mView.findViewById(R.id.cancel_btn).setOnClickListener(this);
-        }
-	}
-
-	private void createDialog() {
-		if (theme == 0) {
-			mDialog = new Dialog(mContext);
-		} else {
-			mDialog = new Dialog(mContext, theme);
-		}
-	}
-
-	public void setProgressCount(int progressByieCount) {
-		this.mProgressCount = progressByieCount;
-		mHandler.post(new Runnable() {
-			public void run() {
-				mProgressTv.setText(mProgressCount + "/" + fileLength);
-			}
-		});
-	}
-
-	public void setProgress(int progress) {
-		this.mProgress = progress;
-		mHandler.post(new Runnable() {
-			public void run() {
-				mProgressBar.setProgress(mProgress);
-			}
-		});
-		mNotification.updateProgress(mProgress);
-	}
-
-	@Override
-	public void onClick(View v) {
-		switch (v.getId()) {
-		case R.id.do_backgroun_btn:
-			doInDackground();
-			break;
-		case R.id.cancel_btn:
-			cancelTask();
-			break;
-
-		default:
-			break;
-		}
-	}
-
-	@Override
-    public void onDownloadStart(int contentLength) {
-	    Log.i(TAG, "onDownloadStart contentLength=" + contentLength);
-        fileLength = contentLength;
-        setProgressCount(0);
+    public void setCanceled(boolean canceled) {
+        this.canceled = canceled;
     }
 
     @Override
-    public void onDownloadProgress(int progress, int progressCount) {
-        log("onDownloadProgress mProgress=" + progress + ",mProgress=" + progress);
-        if(mProgress != progress) {
-            setProgressCount(progressCount);
-            setProgress(progress);
-        }
+    public void run() {
+        downloadFile();
     }
 
-    @Override
-    public void onDownloadFinished(String filePath, int fileLength, String errorMsg) {
-        Log.i(TAG, "onDownloadFinished fileLength=" + fileLength + ",filePath=" + filePath + ",errorMsg=" + errorMsg);
-        if (callback != null) {
-            callback.onDownloadResult(taskId, filePath, errorMsg);
+    public boolean downloadFile() {
+        InputStream input = null;
+        FileOutputStream output = null;
+        String errorMsg = null;
+        String filePath = null;
+        int count = 0;
+        int progress = 0;
+        State state = State.UNKOWN_ERROR;
+        try {
+            if (canceled) return false;
+            URL _url = new URL(url);
+            HttpURLConnection urlConn = (HttpURLConnection) _url
+                    .openConnection();
+            int len = urlConn.getContentLength();
+            if(callback != null) {
+                callback.onDownloadStart(len);
+            }
+            if(len <= 0) {
+                errorMsg = "Content Length is 0";
+                return false;
+            }
+            input = urlConn.getInputStream();
+            if(input != null) {
+                try {
+                    filePath = createFilePath(filePath);
+                    File file = new File(filePath);
+                    output = new FileOutputStream(file);
+                    byte[] buffer = new byte[1024];
+                    int read = 0;
+                    while ((read = input.read(buffer)) != -1) {
+                        output.write(buffer);
+                        count += read;
+                        int pro = (count * 100) / len;
+                        if(progress != pro) {
+                            progress = pro;
+                            if(callback != null) {
+                                callback.onDownloadProgress(progress, count);
+                            }
+                        }
+                        if (canceled) {
+                            deleteFile(file);
+                            break;
+                        }
+                    }
+                    output.flush();
+                    state = State.SUCCESS;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    errorMsg = e.getMessage();
+                    state = State.FILE_IO_ERROR;
+                }
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            state = State.HTTP_IO_ERROR;
+            errorMsg = e.getMessage();
+        } catch (IOException e) {
+            e.printStackTrace();
+            errorMsg = e.getMessage();
+            state = State.HTTP_IO_ERROR;
+        } finally {
+            if(input != null)
+                try {
+                    input.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            if(output != null) {
+                try {
+                    output.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if(callback != null) {
+                callback.onDownloadFinished(state, filePath, errorMsg);
+            }
         }
-        dismissDialog();
-        mNotification.setTitleText("Download completed");
-    }
-
-    private void log(String msg) {
-        if(debug) Log.i(TAG, msg);
+        return true;
     }
 }
